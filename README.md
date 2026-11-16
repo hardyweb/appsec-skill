@@ -1,203 +1,264 @@
-# appsec
+# AppSec
 
-AppSec secure coding skill untuk agent AI. Cherry-picked dari [VibeSec-Skill](https://github.com/BehiSecc/VibeSec-Skill) — bukan copy penuh.
+Secure coding skill untuk AI coding agent.
 
-Satu fail Markdown. Tiada dependency, tiada tooling. Jalan pada mana-mana agent yang baca skill file (PiG, Claude Code, Cursor, Codex, Copilot, Antigravity).
+Skill ini diadaptasi daripada [VibeSec-Skill](https://github.com/BehiSecc/VibeSec-Skill). Saya tidak mengambil keseluruhan kandungannya kerana sebahagian panduan keselamatan sudah tersedia dalam skill lain yang saya gunakan.
 
-```
+Fokus `appsec` ialah keselamatan pada peringkat kod aplikasi seperti access control, XSS, CSRF, SSRF, SQL injection dan file upload.
+
+Semua panduan disimpan dalam satu fail Markdown tanpa dependency atau tooling tambahan.
+
+```text
 appsec/SKILL.md    # 172 baris
 ```
 
-## Masalah yang ia selesaikan
+## Kenapa buat skill ini?
 
-LLM optimize untuk "kod jalan". Minta halaman detail invois, anda dapat halaman detail invois yang berfungsi — tanpa ownership check, sebab anda tak minta. Tiada syntax error, tiada test gagal. Ia cuma senyap-senyap pulangkan data orang lain.
+AI coding agent boleh menghasilkan kod yang berfungsi, tetapi kod yang berjaya dijalankan tidak semestinya selamat.
 
-Vibe coding bawa anda ke 40 endpoint dalam satu hujung minggu. Empat puluh endpoint bermakna empat puluh peluang lupa authorization check.
+Contohnya, apabila diminta membina halaman detail invois, agent mungkin menghasilkan query dan paparan yang betul. Tetapi adakah ia memastikan pengguna hanya boleh melihat invois milik sendiri?
 
-Skill ini ajar model baca kod dari perspektif bug hunter, bukan code generator.
+Perkara seperti ini mudah terlepas jika agent hanya menumpukan kepada requirement yang diberikan.
 
-## Kenapa bukan copy penuh VibeSec
+Saya mahu agent turut melihat kod daripada sudut keselamatan, bukan sekadar memastikan fungsi yang diminta berjalan.
 
-VibeSec 757 baris. Banyak overlap dengan skill infra dan framework yang saya dah ada:
+## Kenapa tidak ambil keseluruhan VibeSec?
 
-| Kandungan VibeSec | Status |
+VibeSec-Skill mempunyai sekitar 757 baris panduan. Banyak kandungannya bertindih dengan skill `security` dan `laravel` yang sudah saya gunakan.
+
+Saya hanya mengambil bahagian yang berkaitan secara langsung dengan keselamatan kod aplikasi.
+
+| Kandungan VibeSec | Tindakan |
 |---|---|
-| Secrets policy, least privilege, audit logging, CIS hardening, WAF, fail2ban, FIM | Buang — `security` dah cover |
-| FormRequest, Blade, queue, Horizon, versi L11-L13 | Buang — `laravel` dah cover |
-| IDOR, XSS sinks, CSRF pre-auth, open redirect bypass, SSRF bypass, upload magic bytes, SQLi edge cases, XXE flags, path traversal, JWT, GraphQL | **Ambil** |
+| Secrets policy, least privilege, audit logging, CIS hardening, WAF, fail2ban, FIM | Tidak diambil — sudah diliputi oleh `security` |
+| FormRequest, Blade, queue, Horizon dan panduan Laravel L11-L13 | Tidak diambil — sudah diliputi oleh `laravel` |
+| IDOR, XSS, CSRF, SSRF, SQLi, XXE, path traversal, JWT, GraphQL dan beberapa teknik bypass | Dikekalkan |
 
-Hasil: 172 baris. Setiap baris adalah sesuatu yang belum ada di tempat lain.
+Hasilnya ialah satu skill yang lebih kecil, dengan skop yang lebih jelas.
 
-Prinsip: **skill patut miliki satu layer, bukan satu topik.** Overlap bakar context dan latih anda untuk abaikan peraturan sendiri.
+Prinsip yang saya gunakan: setiap skill perlu mempunyai tanggungjawab tersendiri. Kandungan yang sama tidak perlu diulang kerana ia menggunakan context agent dan boleh menyebabkan arahan menjadi sukar diselenggara.
 
 ## Kandungan
 
-| Seksyen | Isi |
+| Seksyen | Skop |
 |---|---|
-| `[ACCESS CONTROL]` | Ownership di data layer, tenant isolation, 404 bukan 403, UUID, mass assignment, token revocation |
-| `[CLIENT-SIDE]` | XSS ikut konteks, sumber XSS tak langsung, CSP, header, CSRF termasuk endpoint pre-auth |
-| `[OPEN REDIRECT]` | Allowlist/indirect ref, jadual bypass (`@`, `%252f`, null byte, IDN homograph) |
-| `[PASSWORDS]` | Panjang minimum, Argon2id/bcrypt/scrypt sahaja, tiada MD5/SHA1 |
-| `[SSRF]` | Allowlist, DNS pin, format IP bypass, cloud metadata `169.254.169.254` |
-| `[FILE UPLOAD]` | Allowlist extension + magic bytes + parse sebenar, rename UUID, ZIP slip, polyglot |
-| `[SQL INJECTION]` | Parameterized utama; ORDER BY/LIMIT/IN/LIKE kena allowlist |
-| `[XXE]` | Flag khusus PHP/Python/Java/.NET |
-| `[PATH TRAVERSAL]` | Canonicalize + `commonpath` |
-| `[JWT]` | Algorithm allowlist, `none` reject, `exp`, `jti`, HttpOnly cookie |
-| `[GRAPHQL]` | Introspection off, depth/cost limit |
-| `[AUTHZ CHECKLIST]` | Enam semakan pantas sebelum merge |
-| `[AUDIT MODE — READ-ONLY]` | Audit app sedia ada tanpa ubah kod |
-| `[SECRET SCAN]` | Kesan key/token bocor guna grep + git sahaja |
-| `[STATE]` | Approval gate untuk tindakan destruktif |
+| `[ACCESS CONTROL]` | Ownership check, tenant isolation, 404/403, UUID, mass assignment dan token revocation |
+| `[CLIENT-SIDE]` | XSS, CSP, security headers dan CSRF |
+| `[OPEN REDIRECT]` | Allowlist dan teknik bypass URL validation |
+| `[PASSWORDS]` | Password hashing menggunakan Argon2id, bcrypt dan scrypt |
+| `[SSRF]` | URL validation, DNS rebinding, IP bypass dan cloud metadata |
+| `[FILE UPLOAD]` | Extension, magic bytes, file parsing, ZIP slip dan polyglot files |
+| `[SQL INJECTION]` | Parameterized queries dan allowlist untuk dynamic SQL |
+| `[XXE]` | Konfigurasi XML parser untuk PHP, Python, Java dan .NET |
+| `[PATH TRAVERSAL]` | Path canonicalization dan validation |
+| `[JWT]` | Algorithm validation, expiration dan token revocation |
+| `[GRAPHQL]` | Introspection, query depth dan complexity limits |
+| `[AUTHZ CHECKLIST]` | Semakan authorization sebelum merge |
+| `[AUDIT MODE — READ-ONLY]` | Audit kod sedia ada tanpa membuat perubahan |
+| `[SECRET SCAN]` | Mencari secret dalam working tree, build assets dan Git history |
+| `[STATE]` | Approval sebelum tindakan yang boleh mengubah atau memusnahkan data |
 
-## Bahagian yang paling berguna
+## Beberapa perkara yang diberi perhatian
 
-### SSRF — jadual bypass
+### SSRF
 
-Semua orang tahu "validate URL". Hampir tiada siapa tahu senarainya:
+URL validation bukan sekadar memeriksa sama ada URL menggunakan protokol HTTP atau HTTPS.
 
+Alamat IP boleh ditulis dalam beberapa format yang berbeza. Contohnya:
+
+```text
+2130706433          # Decimal representation of 127.0.0.1
+0177.0.0.1          # Octal
+0x7f.0.0.1          # Hexadecimal
+[::1]               # IPv6 loopback
+[::ffff:127.0.0.1]  # IPv4-mapped IPv6
+127.1               # Shortened IPv4
 ```
-2130706433              # perpuluhan 127.0.0.1
-0177.0.0.1              # oktal
-0x7f.0.0.1              # heks
-[::1]                   # IPv6 loopback
-[::ffff:127.0.0.1]      # IPv4-mapped
-127.1                   # dipendekkan
-[fe80::1%25eth0]        # IPv6 scope ID
-```
 
-Tambah DNS rebinding: resolve, validate, **pin IP**, jangan re-resolve. Dan block `169.254.169.254` — endpoint metadata cloud. Perbezaan antara feature link preview dan serahkan credential instance.
+Skill ini turut mengingatkan agent tentang DNS rebinding, IP pinning dan akses kepada cloud metadata endpoint seperti `169.254.169.254`.
 
-### SQLi — bahagian yang tak boleh parameterize
+### SQL Injection
 
-Parameterized query dah jadi muscle memory. Yang menarik ialah apa yang tak boleh di-bind:
+Parameterized query merupakan amalan asas, tetapi tidak semua bahagian SQL boleh menggunakan bind parameter.
 
-- Nama kolum `ORDER BY`
-- `LIMIT` / `OFFSET`
-- Nama table dan kolum
-- `IN (...)` dengan senarai dinamik
-- Pattern `LIKE` (dan `%` / `_` perlu di-escape)
+Antara contoh yang memerlukan validation dan allowlist:
 
-Semua itu perlu allowlist. Di sinilah "saya guna ORM" senyap-senyap jadi tak betul.
+- Dynamic column dalam `ORDER BY`.
+- Table dan column names.
+- Dynamic `LIMIT` dan `OFFSET`.
+- Senarai nilai dalam `IN`.
+- Pattern dalam `LIKE`, termasuk escaping wildcard.
 
-### File upload = XXE menyamar
+Penggunaan ORM juga tidak bermaksud semua query secara automatik selamat. Penggunaan raw expression dan dynamic query masih perlu diperiksa.
 
-DOCX, XLSX, PPTX dan SVG semuanya ZIP+XML. Jadi "kami hanya benarkan upload dokumen" juga bermakna "kami terima XML kawalan user masuk parser kami".
+### File Upload
 
-Magic bytes:
+File upload memerlukan lebih daripada sekadar pemeriksaan extension.
 
-```
+Fail seperti DOCX, XLSX dan PPTX menggunakan format ZIP yang mengandungi XML. SVG pula merupakan dokumen XML.
+
+Oleh itu, proses upload perlu mengambil kira jenis fail sebenar, kandungan fail dan cara parser memprosesnya.
+
+Antara magic bytes yang digunakan untuk pemeriksaan awal:
+
+```text
 JPEG       FF D8 FF
 PNG        89 50 4E 47 0D 0A 1A 0A
 GIF        47 49 46 38
 PDF        25 50 44 46
-ZIP/DOCX   50 4B 03 04
+ZIP        50 4B 03 04
 ```
+
+Magic bytes sahaja tidak mencukupi untuk mengesahkan keselamatan fail. Parsing dan validation masih diperlukan.
 
 ## Audit mode (read-only)
 
-Untuk app yang dah siap. Default: **baca sahaja, tak ubah kod**.
+Satu bahagian yang saya tambah sendiri ialah audit mode.
 
-Tanpa peraturan eksplisit, agent yang bersemangat akan mula refactor production sementara anda masih baca diff.
+Ia digunakan apabila agent diminta menyemak aplikasi yang sudah dibangunkan. Secara default, agent hanya dibenarkan membaca dan menganalisis kod.
 
-**Dibenarkan:** `read`, `rg`/`grep`, `git log/diff/show`, semak manifest dependency, semak config, semak versi framework.
+**Dibenarkan:**
 
-**Tak dibenarkan tanpa kelulusan:** tulis/refactor, migration, `composer install`, restart service, tulis ke DB, jalankan app, exploit aktif (`sqlmap`, ZAP, `curl` payload) ke prod.
+- Membaca fail dan direktori.
+- Menggunakan `rg` atau `grep`.
+- Menyemak `git log`, `git diff` dan `git show`.
+- Memeriksa dependency manifest dan konfigurasi.
+- Menyemak versi framework dan dependency.
 
-Format laporan — kumpul ikut severity (Critical/High/Medium/Low):
+**Tidak dibenarkan tanpa kelulusan:**
 
+- Mengubah atau refactor kod.
+- Menjalankan migration.
+- Memasang dependency.
+- Restart service.
+- Menulis ke database.
+- Menjalankan aplikasi atau ujian yang memberi kesan kepada production.
+- Menjalankan exploit aktif terhadap production.
+
+Laporan audit menggunakan format berikut:
+
+```text
+file:line — vulnerability class — exploitation risk — recommended fix
 ```
-file:line — kelas vuln — kenapa boleh dieksploit — cadangan fix (satu baris, tiada patch)
-```
 
-Diakhiri dengan: apa yang disemak, apa yang **tak** disemak (perlu kelulusan), senarai fix ikut keutamaan.
+Finding dikumpulkan mengikut severity: Critical, High, Medium dan Low.
 
-Kod hanya diubah bila diminta secara eksplisit selepas baca laporan.
+Laporan juga perlu menyatakan bahagian yang telah diperiksa, perkara yang belum diperiksa dan cadangan pembaikan mengikut keutamaan.
 
-### Grep Laravel
+Sebarang perubahan kod dibuat hanya selepas mendapat arahan yang jelas.
+
+## Laravel quick checks
+
+Saya turut masukkan beberapa arahan `rg` untuk membantu mencari bahagian kod yang perlu diperiksa semasa audit Laravel.
 
 ```bash
-rg '\$request->all\(\)|->update\(\$request'   # mass assignment
-rg 'DB::raw|whereRaw|orderByRaw'               # SQL mentah
-rg '\{!!.*!!\}'                                # Blade tak escape
-rg '->withoutMiddleware'                       # auth dilangkau
-rg 'APP_DEBUG=true'                            # debug di prod
-rg 'unserialize|eval\('                        # surface RCE
-rg 'Http::get\(\$'                             # calon SSRF
-rg 'Storage::.*\$'                             # calon path traversal
+rg '\$request->all\(\)|->update\(\$request'   # Mass assignment
+rg 'DB::raw|whereRaw|orderByRaw'               # Raw SQL
+rg '\{!!.*!!\}'                                # Unescaped Blade output
+rg '->withoutMiddleware'                       # Middleware bypass
+rg 'APP_DEBUG=true'                             # Debug configuration
+rg 'unserialize|eval\('                         # Potential code execution
+rg 'Http::get\(\$'                              # Potential SSRF
+rg 'Storage::.*\$'                              # Potential path traversal
 ```
 
-Sepuluh grep, lima minit, anda dah ada shortlist sebelum baca satu controller pun.
+Arahan ini hanya digunakan untuk mencari calon isu keselamatan. Setiap hasil masih perlu diperiksa secara manual kerana tidak semua padanan semestinya vulnerability.
 
-## Secret scan — grep + git sahaja
+## Secret scan
 
-Tak perlu gitleaks atau trufflehog. Tak semua mesin ada.
+Saya juga masukkan pemeriksaan secret menggunakan `grep` dan Git tanpa memerlukan gitleaks atau trufflehog.
 
-**1. Working tree** — regex untuk AWS (`AKIA`/`ASIA`), GitHub (`ghp_`/`github_pat_`), Stripe (`sk_live_`/`sk_test_`/`rk_live_`), Slack (`xox[baprs]-`), Google (`AIza`/`ya29.`), SendGrid (`SG.`), private key PEM, JWT, generic `api_key=`/`password=`/`token=`, credential dalam URL.
+Pemeriksaan meliputi:
 
-**2. Built assets** — `public/ dist/ build/ static/ .next/`. Paling bahaya, sebab memang awam. Semak juga `NEXT_PUBLIC_*`/`REACT_APP_*`/`VITE_*` dalam `.env`.
+1. Working tree — API keys, tokens, private keys dan credentials.
+2. Built assets — fail dalam `public`, `dist`, `build`, `static` dan `.next`.
+3. Git history — secret yang pernah dimasukkan dan kemudian dipadam.
+4. Noise reduction — mengabaikan placeholder dan fail yang biasanya tidak mengandungi secret sebenar.
+5. Reporting — mask nilai secret dan nyatakan lokasi pendedahan.
 
-**3. Git history** — secret yang dah dipadam masih hidup di sini:
+Satu perkara penting: jika secret pernah masuk ke Git history atau public build, jangan anggap ia selamat hanya kerana baris tersebut sudah dipadam.
 
-```bash
-git log --all -p -S 'AKIA' --oneline | head -50
-git log --all --diff-filter=D --name-only --pretty=format: | sort -u | grep -E '\.env|\.pem|\.key|id_rsa'
-```
-
-**4. Noise reduction** — skip `.env.example`, `*.md`, `*.lock`, vendor; skip placeholder (`changeme`, `your-key-here`, `${...}`, `env(`); heuristik high-entropy untuk string 32+ aksara bercampur huruf besar/kecil/digit.
-
-**5. Report** — mask nilai (`AKIAIOSF...MPLE`), label exposed (git history / built asset / local only), action ladder.
-
-**Prinsip utama: rotate, bukan padam.** Secret dalam git history atau bundle awam = dah compromised. Padam baris tak betul-betul selamatkan apa-apa.
+Secret berkenaan perlu dianggap compromised dan diganti.
 
 ## Pemasangan
 
-PiG:
+### PiG
 
 ```bash
 mkdir -p ~/.pig/agent/skills/appsec
+
 curl -o ~/.pig/agent/skills/appsec/SKILL.md \
   https://raw.githubusercontent.com/hardyweb/appsec-skill/main/appsec/SKILL.md
 ```
 
-Claude Code: `~/.claude/skills/appsec/`
-Cursor: `~/.cursor/skills/appsec/`
-Codex: `~/.agents/skills/appsec/`
-Copilot: `~/.copilot/skills/appsec/`
-Antigravity: `~/.gemini/antigravity/skills/appsec/`
+### Lokasi skill lain
 
-Atau letak dalam direktori project untuk skop project sahaja. Restart session selepas tambah.
+| Agent | Direktori |
+|---|---|
+| Claude Code | `~/.claude/skills/appsec/` |
+| Cursor | `~/.cursor/skills/appsec/` |
+| Codex | `~/.agents/skills/appsec/` |
+| Copilot | `~/.copilot/skills/appsec/` |
+| Antigravity | `~/.gemini/antigravity/skills/appsec/` |
 
-## Guna
+Lokasi ini bergantung pada format dan konfigurasi skill yang disokong oleh setiap agent. Untuk penggunaan dalam satu projek sahaja, letakkan fail dalam direktori skill projek.
 
+## Penggunaan
+
+Aktifkan skill melalui mekanisme yang disediakan oleh agent masing-masing.
+
+Contoh arahan:
+
+```text
+Audit aplikasi Laravel dalam ~/sandbox/invois.
+Gunakan appsec dan read-only mode. Jangan ubah kod.
 ```
-/skill appsec
+
+```text
+Saya mahu membina webhook endpoint yang menerima URL
+daripada pengguna. Semak risiko SSRF sebelum mencadangkan
+implementation.
 ```
 
-Atau cuma tanya:
+```text
+Semak repository ini untuk secret yang mungkin terdedah,
+termasuk Git history dan built assets.
+```
 
-> Audit app Laravel dalam `~/sandbox/invois`. Read-only, jangan ubah apa-apa.
+## Skop dan pembahagian skill
 
-> Saya nak bina endpoint webhook yang terima URL dari user. Semak SSRF dulu.
-
-> Semak repo ni untuk secret yang bocor.
-
-## Skop
+Dalam setup saya, panduan keselamatan dibahagikan kepada tiga bahagian:
 
 | Skill | Skop |
 |---|---|
-| `security` | Infra: SSH, firewall, WAF, auditd, hardening, secrets management |
-| `laravel` | Framework: L11-L13, FormRequest, Blade, queue, Horizon |
-| `appsec` | Kod app: authz, XSS, CSRF, SSRF, SQLi, XXE, upload, JWT, redirect, secret scan |
+| `security` | Infrastruktur: SSH, firewall, WAF, auditd, hardening dan secrets management |
+| `laravel` | Laravel: FormRequest, Blade, queue, Horizon dan framework-specific practices |
+| `appsec` | Application security: authorization, XSS, CSRF, SSRF, SQLi, XXE, file upload dan JWT |
 
-Skill ini tak cover: SAST penuh, dependency CVE scanning, pen-testing aktif, atau compliance framework. Untuk pen-testing guna `security-testing`; untuk dependency, `composer audit` / `npm audit` / `govulncheck`.
+`appsec` bukan pengganti kepada SAST, dependency vulnerability scanning atau penetration testing.
+
+Untuk pemeriksaan tambahan, gunakan tooling yang bersesuaian seperti:
+
+```bash
+composer audit
+npm audit
+govulncheck
+```
+
+Untuk penetration testing, gunakan skill atau tooling khusus seperti `security-testing`.
 
 ## Kredit
 
-Kandungan asal: [BehiSecc/VibeSec-Skill](https://github.com/BehiSecc/VibeSec-Skill) oleh [@Behi_Sec](https://x.com/Behi_Sec). Liputan berbayar lebih mendalam di [vibesec.sh](https://vibesec.sh).
+Skill ini diadaptasi daripada [BehiSecc/VibeSec-Skill](https://github.com/BehiSecc/VibeSec-Skill) oleh [@Behi_Sec](https://x.com/Behi_Sec).
 
-Perubahan dalam repo ini: dipotong kepada layer AppSec sahaja, tambah audit mode read-only, tambah secret scan tanpa dependency, tambah grep Laravel.
+Perubahan yang dibuat:
+
+- Memilih kandungan yang berkaitan dengan application security.
+- Mengelakkan pertindihan dengan skill `security` dan `laravel`.
+- Menambah audit mode read-only.
+- Menambah secret scanning menggunakan grep dan Git.
+- Menambah beberapa quick checks khusus Laravel.
 
 ## Lesen
 
-Ikut lesen asal VibeSec-Skill. Lihat `LICENSE` jika ada.
+Sila rujuk lesen asal VibeSec-Skill dan fail `LICENSE` dalam repository ini untuk maklumat penggunaan dan pengagihan semula.
