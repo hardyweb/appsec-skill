@@ -1,6 +1,6 @@
 ---
 name: appsec
-description: AppSec secure coding ΓÇö IDOR, XSS, CSRF, SSRF, SQLi, XXE, JWT, upload, path traversal
+description: AppSec secure coding — IDOR, XSS, CSRF, SSRF, SQLi, XXE, JWT, upload, path traversal
 ---
 [APPSEC]
 Cherry-picked from VibeSec-Skill (BehiSecc). Complements /skill security (infra) and /skill laravel (framework).
@@ -102,18 +102,18 @@ Scope: web app code. Infra hardening -> security skill. Laravel idioms -> larave
 - [ ] 404 on foreign resources
 - [ ] Tokens revoked on deactivation
 
-[AUDIT MODE  READ-ONLY]
+[AUDIT MODE — READ-ONLY]
 - For existing/previously-built apps: audit only. Do NOT edit, refactor, or "fix" any code unless user explicitly asks after reading the report.
 - Read-only actions allowed: read files, grep/rg, git log/diff/show, dependency manifests, config review, framework version check.
 - No writes, no migrations, no composer/npm install, no service restart, no DB writes, no running the app.
 - Never run active exploitation against live/prod (sqlmap, ZAP, nmap, curl payloads) without explicit approval. Static review first.
 - Report format, grouped by severity (Critical/High/Medium/Low), each finding:
-  file:line ΓÇö vuln class ΓÇö why exploitable ΓÇö fix suggestion (one line, no patch applied)
+  file:line — vuln class — why exploitable — fix suggestion (one line, no patch applied)
 - End report with: what was checked, what was NOT checked (needs approval), and a prioritized fix list.
 - Laravel-specific greps: `$request->all()`/`->update($request`, `DB::raw`, `whereRaw`, `orderByRaw`, `{!! !!}` in Blade, `->withoutMiddleware`, `verify` disabled, `APP_DEBUG=true`, `APP_KEY` in git, missing `authorize()` in FormRequest/Policy, `Storage::` with user path, `Http::get($userUrl)`, `unserialize`, `eval`, `include $`.
 - Deliverable is the report. Code changes only on explicit follow-up request.
 
-[SECRET SCAN [TRADITIONAL, NO DEPENDENCIES]
+[SECRET SCAN — TRADITIONAL, NO DEPENDENCIES]
 Use plain grep/rg + git. No gitleaks/trufflehog required (mention only if already installed).
 
 1. Working tree (exclude vendor/node_modules/.git):
@@ -137,7 +137,7 @@ Use plain grep/rg + git. No gitleaks/trufflehog required (mention only if alread
      -e '://[^/:@[:space:]]+:[^/@[:space:]]+@' \
      -e '(mongodb|postgres|postgresql|mysql|redis|amqp)://[^[:space:]]*:[^[:space:]@]+@'
 
-2. Built assets shipped to browser (highest risk ΓÇö public by definition):
+2. Built assets shipped to browser (highest risk — public by definition):
    rg -n -e 'sk_live|sk_test|AKIA|AIza|xox[baprs]-|gh[pousr]_|BEGIN .*PRIVATE KEY' public/ dist/ build/ static/ .next/ 2>/dev/null
    rg -n 'NEXT_PUBLIC_|REACT_APP_|VITE_|PUBLIC_' .env* 2>/dev/null   # inspect values, names alone are fine
 
@@ -161,13 +161,12 @@ Use plain grep/rg + git. No gitleaks/trufflehog required (mention only if alread
    - Never print full secret in report. Mask: first 6 + last 4 chars, e.g. AKIAIOSF...MPLE
 
 6. Report each hit as:
-   file:line ΓÇö secret type ΓÇö masked value ΓÇö exposed? (in git history / in built asset / local only) ΓÇö action
+   file:line — secret type — masked value — exposed? (in git history / in built asset / local only) — action
    Action ladder: (a) in built asset or git history -> ROTATE NOW, then purge history; (b) local .env only and gitignored -> ok, verify .gitignore; (c) committed to repo -> rotate + purge.
    Rotation is the fix. Deleting the line is not. Assume any secret in git history or a public bundle is already compromised.
 
 7. Also check .gitignore covers: .env, .env.*, *.pem, *.key, *.p12, storage/*.key (Laravel), node_modules, vendor.
 
- 
 [STATE]
-- Approval gates apply to destructive verification steps (scanning prod, active exploitation tests) ΓÇö ask first.
+- Approval gates apply to destructive verification steps (scanning prod, active exploitation tests) — ask first.
 - Verify with /skill verification; record results in walkthrough.
